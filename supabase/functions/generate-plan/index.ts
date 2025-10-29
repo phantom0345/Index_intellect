@@ -82,14 +82,15 @@ ${goal || "No specific goal provided. Use the default B.Tech student strategy."}
 Please generate a comprehensive, prioritized study plan based on this information.`;
 
     // CHANGED: Updated model to 'gemini-1.5-flash-latest' to fix 404 error
+  // ...existing code...
     const geminiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${GEMINI_API_KEY}`,
         },
-        // CHANGED: Restructured body to use 'systemInstruction'
         body: JSON.stringify({
           contents: [
             {
@@ -121,25 +122,47 @@ Please generate a comprehensive, prioritized study plan based on this informatio
       );
     }
 
-    const geminiData = await geminiResponse.json();
-    
-    // Check for empty or invalid response from Gemini
-    if (!geminiData.candidates || geminiData.candidates.length === 0) {
-      console.error("Gemini API error: No candidates in response", geminiData);
-       // Check for safety ratings / blocked prompt
-      if (geminiData.promptFeedback) {
-        return new Response(
-          JSON.stringify({ error: "Prompt was blocked due to safety settings.", details: geminiData.promptFeedback }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" }}
-        );
-      }
+    let geminiData: any;
+    try {
+      geminiData = await geminiResponse.json();
+    } catch (e) {
+      const txt = await geminiResponse.text().catch(() => "");
+      console.error("Failed to parse Gemini response JSON:", String(e), txt);
       return new Response(
-        JSON.stringify({ error: "Failed to generate study plan: No candidates returned." }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" }}
+        JSON.stringify({ error: "Invalid JSON from Gemini", details: txt || String(e) }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const plan = geminiData.candidates[0]?.content?.parts[0]?.text || "No study plan could be generated.";
+    // Robust extraction of text from known possible shapes
+    let plan = "No study plan could be generated.";
+    try {
+      const hasCandidates = Array.isArray(geminiData?.candidates) && geminiData.candidates.length > 0;
+      if (hasCandidates) {
+        const cand = geminiData.candidates[0];
+        plan =
+          cand?.content?.parts?.[0]?.text ||
+          cand?.content?.text ||
+          cand?.text ||
+          cand?.output ||
+          JSON.stringify(cand);
+      } else if (Array.isArray(geminiData.output) && geminiData.output.length > 0) {
+        const out = geminiData.output[0];
+        plan =
+          out?.content?.text ||
+          out?.content?.[0]?.text ||
+          out?.text ||
+          JSON.stringify(out);
+      } else if (typeof geminiData.outputText === "string" && geminiData.outputText.length) {
+        plan = geminiData.outputText;
+      } else if (typeof geminiData.text === "string") {
+        plan = geminiData.text;
+      } else {
+        plan = JSON.stringify(geminiData);
+      }
+    } catch (e) {
+      console.error("Error extracting plan from Gemini data:", String(e), geminiData);
+    }
 
     return new Response(
       JSON.stringify({ plan }),
@@ -150,8 +173,11 @@ Please generate a comprehensive, prioritized study plan based on this informatio
         },
       }
     );
+// ...existing code...
+
+   
   } catch (error) {
-    console.error("Error in generate-plan function:", error.message);
+    console.error("Error in generate-plan function:", String(error));
     return new Response(
       JSON.stringify({ error: "Internal server error" }),
       {
