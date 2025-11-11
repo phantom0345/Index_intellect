@@ -1,0 +1,5 @@
+{
+  "name": "Index Intellect",
+  "description": "An AI-powered application to generate a personalized study plan based on a book's table of contents and your learning goals.",
+  "requestFramePermissions": []
+}
