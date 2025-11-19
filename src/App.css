@@ -18,9 +18,6 @@ body {
   background-image:
    /* linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),*/
     url('./components/image.png');
-  background-image: 
-    url('src/components/image.png');
-  
   background-size: cover;     
   background-position: center;  
   background-attachment: fixed; 
@@ -76,6 +73,7 @@ body {
 .form-group label {
   display: flex;
   align-items: center;
+  display: block;
   color: #ffffff;
   font-size: 1rem;
   font-weight: 600;
