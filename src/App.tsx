@@ -280,7 +280,7 @@ const App: React.FC = () => {
 
             <div className="powered-badge">
               <span className="badge-content">
-                Powered by <strong>Gemini</strong> <SparklesIcon style={{ width: '1rem', height: '1rem' }} />
+                Powered with <strong>Gemini</strong> <SparklesIcon style={{ width: '1rem', height: '1rem' }} />
               </span>
             </div>
           </header>
