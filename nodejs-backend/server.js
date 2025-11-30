@@ -12,7 +12,7 @@ const port = process.env.PORT || 3001;
 
 
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000'],
+  origin: ['http://localhost:5173', 'http://localhost:3000', 'https://index-intellect.vercel.app'],
   credentials: true
 }));
 app.use(express.json());
